@@ -7,12 +7,17 @@ from os import getenv
 import paho.mqtt.client as mqtt
 from argparse import ArgumentParser
 from message import format_message
+import logging
 
 
 def get_anek(max_length):
     # loop until we find one with correct length
     while True:
-        html = get("https://baneks.ru/random")
+        try:
+            html = get("https://baneks.ru/random")
+            logging.info("successfully downloaded anecdote")
+        except Exception as e:
+            logging.error("failed to get anecdote", exc_info=e)
         soup = BeautifulSoup(html.text, features="html.parser")
         anek = unidecode_expect_nonascii(str(
             soup.body.section.p.text)).replace("\n", " ").replace('"', "")
@@ -22,6 +27,8 @@ def get_anek(max_length):
 
 
 if __name__ == "__main__":
+    logging.root.setLevel(logging.INFO)
+
     # parse arguments using uppercase environment variables as a fallback
     parser = ArgumentParser(
         description="send anecdotes from baneks.ru to B4CKSP4CE's signage",
@@ -62,17 +69,17 @@ if __name__ == "__main__":
     # this ones are strictly required for script to work at all
     for var in args.topic, args.host:
         if var is None:
-            print("error: topic and host are required")
+            logging.fatal("error: topic and host are required")
             exit(1)
 
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
-            print("successfully connected to the broker")
+            logging.info("successfully connected to the broker")
         else:
-            print(f"broker connection failure, result code: {rc}")
+            logging.error(f"broker connection failure, result code: {rc}")
 
     def on_publish(client, userdata, mid):
-        print("successfully sent message")
+        logging.info("successfully sent message")
 
     client = mqtt.Client()
     client.on_connect = on_connect
