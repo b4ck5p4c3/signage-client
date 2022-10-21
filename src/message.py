@@ -1,11 +1,15 @@
 #!/usr/bin/python3
 from argparse import ArgumentParser
 import paho.mqtt.publish as mqttpublish
+from json import dumps
 
 
 def format_message(msg, persistant, scrollspeed):
-    return ', '.join((f'{{"msg": "{msg}"', f'"persistant": {persistant}',
-                      f'"scrollspeed": {scrollspeed}}}'))
+    return dumps({
+        "msg": msg,
+        "persistant": persistant,
+        "scrollspeed": scrollspeed
+    })
 
 
 if __name__ == "__main__":
