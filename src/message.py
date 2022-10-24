@@ -4,10 +4,10 @@ import paho.mqtt.publish as mqttpublish
 from json import dumps
 
 
-def format_message(msg, persistant, scrollspeed):
+def format_message(msg, persistent, scrollspeed):
     return dumps({
         "msg": msg,
-        "persistant": persistant,
+        "persistent": persistent,
         "scrollspeed": scrollspeed
     })
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-P",
         type=int,
-        dest="persistant",
+        dest="persistent",
         default=1,
         help="ask firmware to keep message looping until next one arrives")
     args = parser.parse_args()
@@ -49,5 +49,5 @@ if __name__ == "__main__":
                            "username": args.username,
                            "password": args.password
                        },
-                       payload=format_message(args.message, args.persistant,
+                       payload=format_message(args.message, args.persistent,
                                               args.scrollspeed))
