@@ -7,23 +7,52 @@ from os import getenv
 import paho.mqtt.client as mqtt
 from argparse import ArgumentParser
 from message import format_message
+from random import randint
 import logging
 
 
-def get_anek(max_length):
+def get_anek():
+    try:
+        html = get("https://baneks.ru/random")
+        logging.info("successfully downloaded anecdote fron baneks")
+    except Exception as e:
+        logging.error("failed to get anecdote from baneks", exc_info=e)
+    soup = BeautifulSoup(html.text, features="html.parser")
+    return soup.body.section.p.text
+
+
+def get_quote():
+    try:
+        html = get("http://bashorg.org/casual")
+        logging.info("successfully downloaded quote from bashorg")
+    except Exception as e:
+        logging.error("failed to get quote from bashorg", exc_info=e)
+    soup = BeautifulSoup(html.text, features="html.parser")
+    return soup.body.find("div",
+                          id="page").find("div",
+                                          class_="q").findAll("div")[1].text
+
+
+def get_message(max_length):
     # loop until we find one with correct length
     while True:
-        try:
-            html = get("https://baneks.ru/random")
-            logging.info("successfully downloaded anecdote")
-        except Exception as e:
-            logging.error("failed to get anecdote", exc_info=e)
-        soup = BeautifulSoup(html.text, features="html.parser")
-        anek = unidecode_expect_nonascii(str(
-            soup.body.section.p.text)).replace("\n", " ").replace('"', "")
+        match (randint(0, 1)):
+            case 0:
+                message = get_anek()
+            case 1:
+                message = get_quote()
+            case _:
+                logging.fatal("invalid random value")
+                exit(1)
 
-        if len(anek) <= max_length:
-            return anek
+        message = unidecode_expect_nonascii(message).replace("\n",
+                                                             " ").replace(
+                                                                 '"', "")
+
+        if len(message) <= max_length:
+            return message
+
+        logging.info("text too long, retrying")
 
 
 if __name__ == "__main__":
@@ -90,6 +119,6 @@ if __name__ == "__main__":
 
     while True:
         client.publish(args.topic,
-                       payload=format_message(get_anek(args.max_length), 1,
+                       payload=format_message(get_message(args.max_length), 1,
                                               args.scrollspeed))
         sleep(120)
